@@ -4,12 +4,10 @@ import json
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# ---------------------------------------------------------
 # 1. Initialize App
-# ---------------------------------------------------------
 app = FastAPI(title="LZPA Seattle Zoning API")
 
-# 2. Enable CORS (Allows your React Map to talk to this API)
+# 2. Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,23 +16,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------
-# 3. Secure Database Connection
-# ---------------------------------------------------------
-# This looks for the "DATABASE_URL" secret variable on Render.
-# Locally, it will use your Neon string (make sure to add it to your .env file).
+# 3. Database Connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
-    if not DATABASE_URL:
-        # Fallback for local testing ONLY
-        # Replace this with your Neon string if testing locally without a .env file
-        local_url = "postgresql://neondb_owner:npg_czl45FkUIALy@ep-delicate-wave-ah9pkohw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
-        return psycopg2.connect(local_url)
-    
-    return psycopg2.connect(DATABASE_URL)
+    # If on Vercel, use the environment variable. 
+    # If local, use your hardcoded fallback.
+    url = DATABASE_URL if DATABASE_URL else "postgresql://neondb_owner:npg_czl45FkUIALy@ep-delicate-wave-ah9pkohw-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    return psycopg2.connect(url)
 
-# Helper function to run SQL and return GeoJSON
+# Helper function to run SQL
 def run_geo_query(query, params):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -49,14 +40,14 @@ def run_geo_query(query, params):
         conn.close()
 
 # ---------------------------------------------------------
-# 4. API Endpoints
+# 4. API Endpoints (IMPORTANT: Added /api/ prefix for Vercel)
 # ---------------------------------------------------------
 
-@app.get("/")
+@app.get("/api/python") # This is for testing
 def health_check():
-    return {"status": "Online", "message": "LZPA API is live!"}
+    return {"status": "Online", "message": "FastAPI is working on Vercel!"}
 
-@app.get("/buildings")
+@app.get("/api/buildings")
 def get_buildings(min_lon: float, min_lat: float, max_lon: float, max_lat: float):
     query = """
     SELECT jsonb_build_object('type','FeatureCollection','features',COALESCE(jsonb_agg(f), '[]'::jsonb))
@@ -76,7 +67,7 @@ def get_buildings(min_lon: float, min_lat: float, max_lon: float, max_lat: float
     """
     return run_geo_query(query, (min_lon, min_lat, max_lon, max_lat))
 
-@app.get("/zoning")
+@app.get("/api/zoning")
 def get_zoning(min_lon: float, min_lat: float, max_lon: float, max_lat: float):
     query = """
     SELECT jsonb_build_object('type','FeatureCollection','features',COALESCE(jsonb_agg(z), '[]'::jsonb))
@@ -91,7 +82,7 @@ def get_zoning(min_lon: float, min_lat: float, max_lon: float, max_lat: float):
     """
     return run_geo_query(query, (min_lon, min_lat, max_lon, max_lat))
 
-@app.get("/parcels")
+@app.get("/api/parcels")
 def get_parcels(min_lon: float, min_lat: float, max_lon: float, max_lat: float):
     query = """
     SELECT jsonb_build_object('type','FeatureCollection','features',COALESCE(jsonb_agg(p), '[]'::jsonb))
@@ -106,3 +97,4 @@ def get_parcels(min_lon: float, min_lat: float, max_lon: float, max_lat: float):
     """
     return run_geo_query(query, (min_lon, min_lat, max_lon, max_lat))
 
+# No runner block needed for Vercel
