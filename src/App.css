@@ -1,0 +1,8 @@
+.App { display: flex; height: 100vh; }
+.sidebar { width: 300px; background: #2c3e50; color: white; padding: 20px; z-index: 2000; box-shadow: 2px 0 10px rgba(0,0,0,0.5); }
+.stat-card { background: #34495e; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #3498db; }
+.legend-row { display: flex; align-items: center; margin: 12px 0; font-size: 15px; cursor: pointer; }
+.legend-row input { margin-right: 12px; transform: scale(1.2); }
+.swatch { width: 16px; height: 16px; border-radius: 3px; margin-right: 10px; }
+.clear-btn { background: #e67e22; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; margin-top: 20px; font-weight: bold; }
+.leaflet-container { flex: 1; }
