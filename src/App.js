@@ -29,18 +29,19 @@ function App() {
     const fetchAll = useCallback((bbox) => {
         const params = `min_lon=${bbox.min_lon}&min_lat=${bbox.min_lat}&max_lon=${bbox.max_lon}&max_lat=${bbox.max_lat}`;
         
-        // Fetch All Layers
+        // Fetch All Layers - FIXED: Points to /api/ for Vercel
         ['buildings', 'zoning', 'parcels'].forEach(key => {
-            fetch(`http://127.0.0.1:8000/${key}?${params}`)
+            fetch(`/api/${key}?${params}`)
                 .then(r => r.json())
                 .then(data => {
-                    console.log(`${key} Loaded:`, data.features?.length || 0); // Log count for debugging
+                    console.log(`${key} Loaded:`, data.features?.length || 0);
                     setLayers(prev => ({ ...prev, [key]: { ...prev[key], data } }));
                     if (key === 'buildings' && data.features) {
                         const conf = data.features.filter(f => f.properties.status === 'Conflict').length;
                         setStats({ conflict: conf, compliant: data.features.length - conf });
                     }
-                });
+                })
+                .catch(err => console.error("Fetch error:", err));
         });
     }, []);
 
